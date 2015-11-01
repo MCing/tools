@@ -1,0 +1,64 @@
+//获取ip
+public static String getLocalIpAddress() {
+        try {
+            // 遍历网络接口
+            Enumeration<NetworkInterface> infos = NetworkInterface
+                    .getNetworkInterfaces();
+            while (infos.hasMoreElements()) {
+                // 获取网络接口
+                NetworkInterface niFace = infos.nextElement();
+                Enumeration<InetAddress> enumIpAddr = niFace.getInetAddresses();
+                while (enumIpAddr.hasMoreElements()) {
+                    InetAddress mInetAddress = enumIpAddr.nextElement();
+                    // 所获取的网络地址不是127.0.0.1时返回得得到的IP
+                    if (!mInetAddress.isLoopbackAddress()
+                            && InetAddressUtils.isIPv4Address(mInetAddress
+                                    .getHostAddress())) {
+                        return mInetAddress.getHostAddress().toString();
+                    }
+                }
+            }
+        } catch (SocketException e) {
+ 
+        }
+        return null;
+    }
+
+
+//有些路由器/Wi-Fi热点不支持该广播地址（例如：用Android手机做Wi-Fi热点的时候），因此在程序中会出现“ENETUNREACH (Network is unreachable)”的异常，因此，为了保证程序成功发送广播包，建议使用直接广播地址，例如：当前IP地址是 192.168.1.100，子网掩码是 255.255.255.0 的情况下，广播地址为：192.168.1.255
+//当Android设备被设置为Wi-Fi热点的时候，其IP地址是hardcode写死在源码中的，地址是：“192.168.43.1”，对应的广播地址是："192.168.43.255"，所以需要添加一层判断，android设备是否处于WIFI热点状态；
+//获取广播地址
+public static InetAddress getBroadcastAddress(Context context) throws UnknownHostException {
+    WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+    DhcpInfo dhcp = wifi.getDhcpInfo();
+    if(dhcp==null) {
+        return InetAddress.getByName("255.255.255.255");
+    }
+    if(isWifiApEnabled(context){
+	return InetAddress.getByName("192.168.43.255");
+	}
+    int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+    byte[] quads = new byte[4];
+    for (int k = 0; k < 4; k++)
+        quads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
+    return InetAddress.getByAddress(quads);
+}
+
+
+
+
+//判断Android设备是否处于WIFI热点模式
+protected static Boolean isWifiApEnabled(Context context) {
+    try {
+        WifiManager manager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);  
+        Method method = manager.getClass().getMethod("isWifiApEnabled");
+        return (Boolean)method.invoke(manager);
+    }
+    catch (NoSuchMethodException e) {
+        e.printStackTrace();
+    }
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)  {
+        e.printStackTrace();
+}
+    return false;
+}
