@@ -1,0 +1,53 @@
+//屏幕分辨率
+DisplayMetrics metric = new DisplayMetrics();
+getWindowManager().getDefaultDisplay().getMetrics(metric);
+int width = metric.widthPixels;     // 屏幕宽度（像素）
+int height = metric.heightPixels;   // 屏幕高度（像素）
+float density = metric.density;   //  dpi/160  密度比
+int densityDpi = metric.densityDpi; 
+
+
+
+
+//获取状态栏高度
+public static int getStatusBarHeight(Context context){
+        Class<?> c = null;
+        Object obj = null;
+        Field field = null;
+        int x = 0, statusBarHeight = 0;
+        try {
+            c = Class.forName("com.android.internal.R$dimen");
+            obj = c.newInstance();
+            field = c.getField("status_bar_height");
+            x = Integer.parseInt(field.get(obj).toString());
+            statusBarHeight = context.getResources().getDimensionPixelSize(x);
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        } 
+        return statusBarHeight;
+    }
+
+
+//设置屏幕亮度
+public void screenBrightness(float value) {
+try {
+	WindowManager.LayoutParams layout = getWindow().getAttributes();
+	layout.screenBrightness = value; //0最弱 1最亮
+	getWindow().setAttributes(layout);
+} catch (Exception e) {
+}
+}
+
+
+//关闭系统的软键盘
+public static void dismissSoftKeyboard(Activity activity)
+{
+	View view = activity.getWindow().peekDecorView();
+	if (view != null)
+	{
+		InputMethodManager inputmanger = (InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+		inputmanger.hideSoftInputFromWindow(view.getWindowToken(), 0);
+	}
+}
+
+
