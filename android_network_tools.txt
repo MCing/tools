@@ -1,4 +1,7 @@
-//获取ip
+/**
+* 获取ip    可以获取GPRS连接时的ip，也可以获取wifi连接时的ip
+* 权限  <uses-permission android:name="android.permission.INTERNET" />   
+*/
 public static String getLocalIpAddress() {
         try {
             // 遍历网络接口
@@ -19,46 +22,153 @@ public static String getLocalIpAddress() {
                 }
             }
         } catch (SocketException e) {
- 
         }
-        return null;
+        return "127.0.0.1";
     }
 
 
-//有些路由器/Wi-Fi热点不支持该广播地址（例如：用Android手机做Wi-Fi热点的时候），因此在程序中会出现“ENETUNREACH (Network is unreachable)”的异常，因此，为了保证程序成功发送广播包，建议使用直接广播地址，例如：当前IP地址是 192.168.1.100，子网掩码是 255.255.255.0 的情况下，广播地址为：192.168.1.255
-//当Android设备被设置为Wi-Fi热点的时候，其IP地址是hardcode写死在源码中的，地址是：“192.168.43.1”，对应的广播地址是："192.168.43.255"，所以需要添加一层判断，android设备是否处于WIFI热点状态；
-//获取广播地址
-public static InetAddress getBroadcastAddress(Context context) throws UnknownHostException {
-    WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-    DhcpInfo dhcp = wifi.getDhcpInfo();
-    if(dhcp==null) {
-        return InetAddress.getByName("255.255.255.255");
-    }
-    if(isWifiApEnabled(context){
-	return InetAddress.getByName("192.168.43.255");
+
+
+
+/**
+*获取手机运营商
+* 权限<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+*/
+public String getMobileOperator(Context context){
+	String str = ((TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE))
+				.getSubscriberId();
+	String mobileOpertator = null;
+	if (str != null) {
+		if ((str.startsWith("46000")) || (str.startsWith("46002")) || (str.startsWith("46007")))
+			mobileOpertator = "中国移动";
+		else if (str.startsWith("46001"))
+			mobileOpertator = "中国联通";
+		else if (str.startsWith("46003"))
+			mobileOpertator = "中国电信 ";
+		else
+			mobileOpertator = "未知运营商";
+	}else {
+		mobileOpertator = "找不到SIM卡";
 	}
-    int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
-    byte[] quads = new byte[4];
-    for (int k = 0; k < 4; k++)
-        quads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
-    return InetAddress.getByAddress(quads);
+	return mobileOpertator;
 }
 
 
 
+/**
+* 获取网络连接状态
+*  权限<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+*/
+public String getNetworkState(Context context) {
+	String netWorkState  = null;
+		try {
+			ConnectivityManager localConnectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+			if (localConnectivityManager.getActiveNetworkInfo() != null
+					&& localConnectivityManager.getActiveNetworkInfo()
+							.isAvailable()) {
+				netWorkState  = "网络可用";
+				if (NetworkInfo.State.CONNECTED == localConnectivityManager
+						.getNetworkInfo(0).getState()) {
+					netWorkState  = "GRPS已连接";
+				} else if (NetworkInfo.State.CONNECTED == localConnectivityManager
+						.getNetworkInfo(1).getState()) {
+					netWorkState  = "WIFI已连接";
+				}
+			} else {
+				netWorkState  = "网络不可用";
+			}
+		} catch (Exception localException) {
+			netWorkState  = "网络不可用";
+		}
+		return netWorkState; 
+	}
 
-//判断Android设备是否处于WIFI热点模式
-protected static Boolean isWifiApEnabled(Context context) {
-    try {
-        WifiManager manager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);  
-        Method method = manager.getClass().getMethod("isWifiApEnabled");
-        return (Boolean)method.invoke(manager);
-    }
-    catch (NoSuchMethodException e) {
-        e.printStackTrace();
-    }
-    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)  {
-        e.printStackTrace();
-}
-    return false;
-}
+
+
+/**
+* ------------wifi连接状态下------------
+*
+* 获取网关地址
+* 获取子网掩码
+* 获取ip地址
+* 权限 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/> 
+*/
+public static String getGateway(Context context){
+		WifiManager wm = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+		DhcpInfo di = wm.getDhcpInfo();  
+		long getewayIpL=di.gateway;  
+		String getwayIp=number2ip(getewayIpL);//网关地址  
+		return getwayIp;
+	}
+	public static String getMaskIp(Context context){
+		WifiManager wm = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+		DhcpInfo di = wm.getDhcpInfo();  
+		long netmaskIpL=di.netmask;  
+		String netmaskIpS=number2ip(netmaskIpL);//子网掩码地址
+		return netmaskIpS;
+	}	
+	public static String getWifiIp(Context context){
+	        WifiManager wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+	        WifiInfo wifiInfo = wifiManager.getConnectionInfo();         
+	        int ipAddress = wifiInfo.getIpAddress();     
+	        String ip = number2ip(ipAddress);
+			return ip;
+	}
+//辅助方法
+public static String number2ip(long ip){  
+    StringBuffer sb=new StringBuffer();  
+    sb.append(String.valueOf((int)(ip&0xff)));  
+    sb.append('.');  
+    sb.append(String.valueOf((int)((ip>>8)&0xff)));  
+    sb.append('.');  
+    sb.append(String.valueOf((int)((ip>>16)&0xff)));  
+    sb.append('.');  
+    sb.append(String.valueOf((int)((ip>>24)&0xff)));  
+    return sb.toString();  
+}  
+ 
+ 
+/**
+	* 获取广播地址
+	* 
+	* 注意:
+	* 有些路由器/Wi-Fi热点不支持该广播地址（例如：用Android手机做Wi-Fi热点的时候），因此在程序中会出现“ENETUNREACH (Network is unreachable)”的异常，因此，为了保证程序成功发送广播包，建议使用直接广播地址，例如：当前IP地址是 192.168.1.100，子网掩码是 255.255.255.0 的情况下，广播地址为：192.168.1.255
+	* 当Android设备被设置为Wi-Fi热点的时候，其IP地址是hardcode写死在源码中的，地址是：“192.168.43.1”，对应的广播地址是："192.168.43.255"，所以需要添加一层判断，android设备是否处于WIFI热点状态；
+	* 1.根据ip地址和子网掩码计算出广播地址
+	* 2.若是热点状态，广播地址为 192.168.43.255
+	* 3.其他则为 255.255.255.255
+	*/
+	public String getBroadcastAddress(Context context) {
+	    WifiManager wifi = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+	    DhcpInfo dhcp = wifi.getDhcpInfo();
+	    if(dhcp==null) {
+	        return "255.255.255.255";
+	    }
+	    
+	    //设备开启AP热点模式，则广播地址固定为192.168.43.255 （源码中有）
+	    if(isWifiApEnabled(context)){
+	    	return "192.168.43.255";
+		}
+	    int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+	    return number2ip(broadcast);
+	}
+	//辅助方法，判断Android设备是否处于WIFI热点模式
+	protected Boolean isWifiApEnabled(Context context) {
+	    try {
+	        WifiManager manager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);  
+	        Method method = manager.getClass().getMethod("isWifiApEnabled");
+	        return (Boolean)method.invoke(manager);
+	    }
+	    catch (NoSuchMethodException e) {
+	        e.printStackTrace();
+	    }
+	    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)  {
+	        e.printStackTrace();
+	    }
+	    return false;
+	}
+
+	
+	
+
+

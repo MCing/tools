@@ -1,0 +1,8 @@
+ctrl + alt + down   //copy a line to next line
+ctrl + d            //delete a line
+alt + up/down      //move a line to up/down
+
+ctrl + shift + o    //import packages
+
+ctrl + shift + r    //open resource window to find file in the whole workspace
+
